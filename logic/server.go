@@ -129,7 +129,6 @@ func ServerJoin(network string, serverID string, privateKey string) error {
 
 // ServerCheckin - runs pulls and pushes for server
 func ServerCheckin(serverID string, mac string, network string) error {
-	cleanupLegacyServers(network)
 	var serverNode = &models.Node{}
 	var currentNode, err = GetNodeByIDorMacAddress(serverID, mac, network)
 	if err != nil {
@@ -420,21 +419,4 @@ func checkNodeActions(node *models.Node) string {
 		return models.NODE_DELETE
 	}
 	return ""
-}
-
-// deletes old servers
-func cleanupLegacyServers(network string) {
-	var nodes, err = GetNetworkNodes(network)
-	if err != nil {
-		return
-	}
-	for _, node := range nodes {
-		if node.IsServer == "yes" && strings.Contains(node.ID, "###"+network) {
-			err = DeleteNodeByID(&node, true)
-			if err != nil {
-				continue
-			}
-			logger.Log(2, "cleaned up legacy server on network,", network)
-		}
-	}
 }
