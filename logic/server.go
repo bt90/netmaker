@@ -26,22 +26,24 @@ const KUBERNETES_LISTEN_PORT = 31821
 const KUBERNETES_SERVER_MTU = 1024
 
 // ServerJoin - responsible for joining a server to a network
-func ServerJoin(network string, serverID string, privateKey string) error {
+func ServerJoin(network string) error {
 
 	if network == "" {
 		return errors.New("no network provided")
 	}
-
+	var privateKey = ""
 	var err error
+
 	var node = &models.Node{
 		IsServer:     "yes",
 		DNSOn:        "no",
 		IsStatic:     "yes",
 		Name:         models.NODE_SERVER_NAME,
-		MacAddress:   serverID,
-		ID:           serverID,
+		MacAddress:   servercfg.GetNodeID(),
+		ID:           "", // will be set to new uuid
 		UDPHolePunch: "no",
 	}
+
 	SetNodeDefaults(node)
 
 	if servercfg.GetPlatform() == "Kubernetes" {
