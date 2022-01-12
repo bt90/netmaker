@@ -79,8 +79,6 @@ func ServerJoin(network string, serverID string, privateKey string) error {
 
 	node.Network = network
 
-	cleanupServerIfLegacy(node.MacAddress, network)
-
 	logger.Log(2, "adding a server instance on network", node.Network)
 	err = CreateNode(node)
 	if err != nil {
@@ -131,6 +129,7 @@ func ServerJoin(network string, serverID string, privateKey string) error {
 
 // ServerCheckin - runs pulls and pushes for server
 func ServerCheckin(serverID string, mac string, network string) error {
+	cleanupLegacyServers(network)
 	var serverNode = &models.Node{}
 	var currentNode, err = GetNodeByIDorMacAddress(serverID, mac, network)
 	if err != nil {
@@ -423,15 +422,19 @@ func checkNodeActions(node *models.Node) string {
 	return ""
 }
 
-func cleanupServerIfLegacy(macaddres, network string) {
-	var node, err = GetNodeByMacAddress(macaddres, network)
+// deletes old servers
+func cleanupLegacyServers(network string) {
+	var nodes, err = GetNetworkNodes(network)
 	if err != nil {
 		return
 	}
-	err = DeleteNodeByMacAddress(&node, true)
-	if err != nil {
-		logger.Log(1, "failed clean up of legacy server,", macaddres, "on network,", network)
-		return
+	for _, node := range nodes {
+		if node.IsServer == "yes" && strings.Contains(node.ID, "###"+network) {
+			err = DeleteNodeByID(&node, true)
+			if err != nil {
+				continue
+			}
+			logger.Log(2, "cleaned up legacy server on network,", network)
+		}
 	}
-	logger.Log(2, "cleaned up legacy server,", macaddres, "on network,", network)
 }
